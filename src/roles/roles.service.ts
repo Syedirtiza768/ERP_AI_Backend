@@ -90,4 +90,8 @@ export class RolesService {
     const role = await this.findOne(id);
     await this.rolesRepository.remove(role);
   }
+
+  async save(role: Role): Promise<Role> {
+    return this.rolesRepository.save(role);
+  }
 }

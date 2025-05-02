@@ -67,4 +67,14 @@ export class PermissionsService {
     const permission = await this.findOne(id);
     await this.permissionsRepository.remove(permission);
   }
+
+  async findByName(name: string): Promise<Permission> {
+    const permission = await this.permissionsRepository.findOne({ where: { name } });
+  
+    if (!permission) {
+      throw new NotFoundException(`Permission with name "${name}" not found`);
+    }
+  
+    return permission;
+  }
 }
