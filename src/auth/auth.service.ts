@@ -18,20 +18,24 @@ export class AuthService {
     private userRolesService: UserRolesService,
   ) {}
 
-  async validateUser(username: string, password: string): Promise<any> {
-    const user = await this.usersService.findByUsername(username);
-    
-    if (user && await bcrypt.compare(password, user.password)) {
-      const { password, ...result } = user;
-      return result;
+  async validateUser(email: string, password: string): Promise<any> {
+    try {
+      const user = await this.usersService.findByEmail(email);
+      
+      if (user && await bcrypt.compare(password, user.password)) {
+        const { password, ...result } = user;
+        return result;
+      }
+      
+      return null;
+    } catch (error) {
+      return null;
     }
-    
-    return null;
   }
 
   async login(loginDto: LoginDto, ipAddress: string, userAgent: string) {
-    const { username, password } = loginDto;
-    const user = await this.validateUser(username, password);
+    const { email, password } = loginDto;
+    const user = await this.validateUser(email, password);
     
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -39,8 +43,8 @@ export class AuthService {
     
     const payload = {
       username: user.username,
-  email: user.email,
-  sub: user.id,
+      email: user.email,
+      sub: user.id,
     };
     
     // Log the login action
