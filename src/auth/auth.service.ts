@@ -8,6 +8,7 @@ import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { ActionType } from '../audit-logs/entities/audit-log.entity';
 import { UserRolesService } from 'src/user-roles/user-roles.service';
 import { RequestUser } from '../common/interfaces/user.interface';
+import { RefreshTokenService } from './services/refresh-token.service';
 
 @Injectable()
 export class AuthService {
@@ -16,12 +17,16 @@ export class AuthService {
     private jwtService: JwtService,
     private auditLogsService: AuditLogsService,
     private userRolesService: UserRolesService,
+    private refreshTokenService: RefreshTokenService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
     try {
+      // console.log("email is" + email)
+      // Make sure we're specifically looking up by email, not username
       const user = await this.usersService.findByEmail(email);
-      
+      console.log("user is" , user)
+      // Only proceed with password comparison if user exists
       if (user && await bcrypt.compare(password, user.password)) {
         const { password, ...result } = user;
         return result;
@@ -29,6 +34,7 @@ export class AuthService {
       
       return null;
     } catch (error) {
+      // Explicitly return null for invalid credentials
       return null;
     }
   }
@@ -57,8 +63,13 @@ export class AuthService {
       userAgent,
     });
     
+    // Generate both tokens
+    const accessToken = this.jwtService.sign(payload);
+    const refreshToken = await this.refreshTokenService.createRefreshToken(user.id);
+    
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: accessToken,
+      refresh_token: refreshToken,
       user: {
         id: user.id,
         username: user.username,
@@ -67,6 +78,30 @@ export class AuthService {
     };
   }
 
+  async refreshToken(token: string, userId: string): Promise<{ access_token: string }> {
+    const isValid = await this.refreshTokenService.validateRefreshToken(token, userId);
+    
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+    
+    const user = await this.usersService.findOne(userId);
+    
+    const payload = {
+      username: user.username,
+      email: user.email,
+      sub: user.id,
+    };
+    
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
+  }
+
+  async logout(userId: string): Promise<void> {
+    // Revoke all refresh tokens for the user
+    await this.refreshTokenService.revokeAllUserRefreshTokens(userId);
+  }
 
   async checkPermissions(userId: string, requiredPermissions: string[]): Promise<{ hasPermissions: boolean }> {
     // Get user roles with their permissions

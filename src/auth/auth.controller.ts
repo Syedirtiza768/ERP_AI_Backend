@@ -27,9 +27,18 @@ export class AuthController {
     );
   }
 
+  @Public()
+  @Post('refresh')
+  async refreshToken(@Body() body: { refresh_token: string; user_id: string }) {
+    return this.authService.refreshToken(body.refresh_token, body.user_id);
+  }
+
   @Post('logout')
   async logout(@Req() req: Request) {
     const user = req.user as RequestUser;
+    
+    // Revoke all refresh tokens for this user
+    await this.authService.logout(user.id);
     
     // Log the logout action
     await this.auditLogsService.create({

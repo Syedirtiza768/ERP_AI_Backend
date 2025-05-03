@@ -23,6 +23,7 @@ import { CommonModule } from './common/common.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from './auth/guards/permissions.guard';
 import { AuditLogInterceptor } from './common/interceptors/audit-log.interceptor';
+import { RefreshToken } from './auth/entities/refresh-token.entity';
 
 @Module({
   imports: [
@@ -33,7 +34,7 @@ import { AuditLogInterceptor } from './common/interceptors/audit-log.interceptor
       username: 'root',
       password: '',
       database: 'erp_system_ai',
-      entities: [User, Role, Permission, UserRole, AuditLog],
+      entities: [User, Role, Permission, UserRole, AuditLog, RefreshToken],
       synchronize: true,
     }),
     UsersModule,

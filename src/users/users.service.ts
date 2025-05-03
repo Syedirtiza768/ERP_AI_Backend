@@ -84,6 +84,11 @@ export class UsersService {
   }
 
   async findByEmail(email: string): Promise<User> {
+    // First check if email is undefined or empty
+    if (!email) {
+      throw new NotFoundException('Email is required');
+    }
+  
     const user = await this.usersRepository.findOne({ where: { email } });
     
     if (!user) {
